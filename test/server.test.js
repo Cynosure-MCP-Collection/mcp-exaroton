@@ -104,7 +104,7 @@ test('starts as a stdio MCP child process', async (t) => {
   t.after(async () => client.close());
   await client.connect(transport);
   const info = client.getServerVersion();
-  assert.equal(info.name, 'io.github.mcporg/exaroton');
+  assert.equal(info.name, 'io.github.cynosure/exaroton');
   assert.equal(info.title, 'exaroton Minecraft Server Manager');
   assert.match(info.description, /exaroton Minecraft servers/);
   assert.equal(info.icons[0].mimeType, 'image/png');
@@ -124,7 +124,7 @@ test('serves the current MCP protocol over stdio', async (t) => {
   t.after(async () => client.close());
   await client.connect(transport);
   const info = client.getServerVersion();
-  assert.equal(info.name, 'io.github.mcporg/exaroton');
+  assert.equal(info.name, 'io.github.cynosure/exaroton');
   assert.equal(info.title, 'exaroton Minecraft Server Manager');
   const listed = await client.listTools();
   assert.equal(listed.tools.length, 29);

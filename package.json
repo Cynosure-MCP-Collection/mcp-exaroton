@@ -1,10 +1,15 @@
 {
-  "name": "@mcporg/exaroton",
+  "name": "@cynosure/exaroton",
   "version": "1.0.0",
   "description": "MCP server for managing exaroton Minecraft servers",
-  "mcpName": "io.github.mcporg/exaroton",
-  "homepage": "https://www.npmjs.com/package/@mcporg/exaroton",
-  "keywords": ["mcp", "model-context-protocol", "exaroton", "minecraft"],
+  "mcpName": "io.github.cynosure/exaroton",
+  "homepage": "https://www.npmjs.com/package/@cynosure/exaroton",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "exaroton",
+    "minecraft"
+  ],
   "type": "module",
   "bin": {
     "mcp-exaroton": "./src/index.js"
