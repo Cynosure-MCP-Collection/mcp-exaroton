@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { createServer } from '../src/server.js';
+import { parseApiToken } from '../src/token.js';
 
 function fakeExaroton() {
   const calls = [];
@@ -55,10 +56,13 @@ test('registers tools and executes reads and actions through MCP', async (t) => 
 
   const listed = await client.listTools();
   assert.equal(listed.tools.length, 29);
-  assert.ok(listed.tools.some((tool) => tool.name === 'set_config_options'));
+  assert.ok(listed.tools.some((tool) => tool.name === 'set_config_options' && tool.title === 'Set Config Options'));
+  assert.equal(listed.tools.find((tool) => tool.name === 'stop_server').annotations.destructiveHint, true);
+  assert.equal(listed.tools.find((tool) => tool.name === 'add_player_entries').annotations.destructiveHint, false);
 
   const servers = await client.callTool({ name: 'list_servers', arguments: {} });
   assert.deepEqual(JSON.parse(servers.content[0].text), [{ id: 'server-1', name: 'Demo', status: 0 }]);
+  assert.deepEqual(servers.structuredContent.items, [{ id: 'server-1', name: 'Demo', status: 0 }]);
 
   const started = await client.callTool({ name: 'start_server', arguments: { serverId: 'server-1', useOwnCredits: true } });
   assert.equal(JSON.parse(started.content[0].text).success, true);
@@ -99,6 +103,36 @@ test('starts as a stdio MCP child process', async (t) => {
   });
   t.after(async () => client.close());
   await client.connect(transport);
+  const info = client.getServerVersion();
+  assert.equal(info.name, 'io.github.mcporg/exaroton');
+  assert.equal(info.title, 'exaroton Minecraft Server Manager');
+  assert.match(info.description, /exaroton Minecraft servers/);
+  assert.equal(info.icons[0].mimeType, 'image/png');
   const listed = await client.listTools();
   assert.equal(listed.tools.length, 29);
+});
+
+test('serves the current MCP protocol over stdio', async (t) => {
+  const client = new Client({ name: 'modern-stdio-test', version: '1.0.0' }, {
+    versionNegotiation: { mode: { pin: '2026-07-28' } },
+  });
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [fileURLToPath(new URL('../src/index.js', import.meta.url))],
+    env: { ...process.env, EXAROTON_API_TOKEN: 'unused-test-token' },
+  });
+  t.after(async () => client.close());
+  await client.connect(transport);
+  const info = client.getServerVersion();
+  assert.equal(info.name, 'io.github.mcporg/exaroton');
+  assert.equal(info.title, 'exaroton Minecraft Server Manager');
+  const listed = await client.listTools();
+  assert.equal(listed.tools.length, 29);
+});
+
+test('accepts raw or Bearer-prefixed exaroton tokens', () => {
+  assert.equal(parseApiToken(' abc '), 'abc');
+  assert.equal(parseApiToken('Bearer abc'), 'abc');
+  assert.equal(parseApiToken('bearer   abc '), 'abc');
+  assert.throws(() => parseApiToken('Bearer '), /EXAROTON_API_TOKEN is required/);
 });

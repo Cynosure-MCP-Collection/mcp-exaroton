@@ -1,7 +1,10 @@
 {
-  "name": "mcp-exaroton",
+  "name": "@mcporg/exaroton",
   "version": "1.0.0",
   "description": "MCP server for managing exaroton Minecraft servers",
+  "mcpName": "io.github.mcporg/exaroton",
+  "homepage": "https://www.npmjs.com/package/@mcporg/exaroton",
+  "keywords": ["mcp", "model-context-protocol", "exaroton", "minecraft"],
   "type": "module",
   "bin": {
     "mcp-exaroton": "./src/index.js"
@@ -9,8 +12,12 @@
   "files": [
     "src/",
     "README.md",
-    "icon.png"
+    "icon.png",
+    "server.json"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test"

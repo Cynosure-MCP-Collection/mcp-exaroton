@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mcporg/exaroton",
+  "title": "exaroton Minecraft Server Manager",
+  "description": "MCP server for managing exaroton Minecraft servers",
+  "version": "1.0.0",
+  "websiteUrl": "https://www.npmjs.com/package/@mcporg/exaroton",
+  "icons": [
+    {
+      "src": "https://unpkg.com/@mcporg/exaroton@1.0.0/icon.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@mcporg/exaroton",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "EXAROTON_API_TOKEN",
+          "description": "exaroton API token from https://exaroton.com/account",
+          "isRequired": true,
+          "isSecret": true,
+          "placeholder": "Your exaroton API token"
+        }
+      ]
+    }
+  ]
+}

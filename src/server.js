@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import packageInfo from '../package.json' with { type: 'json' };
 
 const serverId = z.string().trim().min(1).describe('exaroton server ID');
 const poolId = z.string().trim().min(1).describe('exaroton credit pool ID');
@@ -8,11 +9,22 @@ const listName = z.string().trim().min(1).describe('Player list name, e.g. white
 const nonemptyText = z.string().min(1);
 const entries = z.array(nonemptyText).min(1).max(100);
 const readOnly = { readOnlyHint: true };
-const write = { readOnlyHint: false, destructiveHint: false };
+const additive = { readOnlyHint: false, destructiveHint: false };
 const destructive = { readOnlyHint: false, destructiveHint: true };
 
 function result(value) {
-  return { content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] };
+  const data = JSON.parse(JSON.stringify(value));
+  return {
+    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+    structuredContent: Array.isArray(data) ? { items: data } : data,
+  };
+}
+
+function toolTitle(name) {
+  return name.split('_').map((word) => {
+    if (word === 'ram' || word === 'motd') return word.toUpperCase();
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
 }
 
 function action(server, name) {
@@ -62,12 +74,23 @@ function checkConfigValue(option, value) {
 }
 
 export function createServer(client) {
-  const mcp = new McpServer({ name: 'mcp-exaroton', version: '1.0.0' }, {
+  const mcp = new McpServer({
+    name: packageInfo.mcpName ?? packageInfo.name,
+    title: 'exaroton Minecraft Server Manager',
+    description: packageInfo.description,
+    version: packageInfo.version,
+    websiteUrl: packageInfo.homepage,
+    icons: [{
+      src: `https://unpkg.com/${packageInfo.name}@${packageInfo.version}/icon.png`,
+      mimeType: 'image/png',
+      sizes: ['512x512'],
+    }],
+  }, {
     instructions: 'Use list_servers to discover IDs. Start/stop/restart and other write tools change the actual hosted server. Logs and player lists may be cached by exaroton.',
   });
 
   function tool(name, description, inputSchema, annotations, handler) {
-    mcp.registerTool(name, { description, inputSchema, annotations }, async (args) => {
+    mcp.registerTool(name, { title: toolTitle(name), description, inputSchema, annotations }, async (args) => {
       try {
         return result(await handler(args));
       } catch (error) {
@@ -85,17 +108,17 @@ export function createServer(client) {
     async ({ serverId }) => client.server(serverId).get());
 
   tool('start_server', 'Start a server. This may consume credits. Set useOwnCredits for a shared server when appropriate.',
-    z.object({ serverId, useOwnCredits: z.boolean().default(false) }), write,
+    z.object({ serverId, useOwnCredits: z.boolean().default(false) }), destructive,
     async ({ serverId, useOwnCredits }) => { const server = client.server(serverId); await server.start(useOwnCredits); return action(server, 'start'); });
-  tool('stop_server', 'Stop a running server.', z.object({ serverId }), write,
+  tool('stop_server', 'Stop a running server.', z.object({ serverId }), destructive,
     async ({ serverId }) => { const server = client.server(serverId); await server.stop(); return action(server, 'stop'); });
-  tool('restart_server', 'Restart a running server.', z.object({ serverId }), write,
+  tool('restart_server', 'Restart a running server.', z.object({ serverId }), destructive,
     async ({ serverId }) => { const server = client.server(serverId); await server.restart(); return action(server, 'restart'); });
   tool('execute_command', 'Execute a Minecraft server console command. Commands can change server state.',
     z.object({ serverId, command: nonemptyText.describe('Command without a leading slash, e.g. say Hello') }), destructive,
     async ({ serverId, command }) => { const server = client.server(serverId); await server.executeCommand(command); return action(server, 'execute_command'); });
   tool('extend_stop_time', 'Extend the server automatic stop timer by the given number of seconds.',
-    z.object({ serverId, seconds: z.number().int().positive() }), write,
+    z.object({ serverId, seconds: z.number().int().positive() }), additive,
     async ({ serverId, seconds }) => { const server = client.server(serverId); await server.extendStopTime(seconds); return action(server, 'extend_stop_time'); });
 
   tool('get_logs', 'Get cached server log text; it may lag behind live console output.', z.object({ serverId }), readOnly,
@@ -104,18 +127,18 @@ export function createServer(client) {
     async ({ serverId }) => ({ serverId, url: await client.server(serverId).shareLogs() }));
   tool('get_ram', 'Get configured server RAM in GiB.', z.object({ serverId }), readOnly,
     async ({ serverId }) => ({ serverId, ramGiB: await client.server(serverId).getRAM() }));
-  tool('set_ram', 'Set server RAM in full GiB, from 2 to 16.', z.object({ serverId, ramGiB: z.number().int().min(2).max(16) }), write,
+  tool('set_ram', 'Set server RAM in full GiB, from 2 to 16.', z.object({ serverId, ramGiB: z.number().int().min(2).max(16) }), destructive,
     async ({ serverId, ramGiB }) => { const server = client.server(serverId); await server.setRAM(ramGiB); return { ...action(server, 'set_ram'), ramGiB }; });
   tool('get_motd', 'Get the server message of the day.', z.object({ serverId }), readOnly,
     async ({ serverId }) => ({ serverId, motd: await client.server(serverId).getMOTD() }));
-  tool('set_motd', 'Set the server message of the day.', z.object({ serverId, motd: z.string() }), write,
+  tool('set_motd', 'Set the server message of the day.', z.object({ serverId, motd: z.string() }), destructive,
     async ({ serverId, motd }) => { const server = client.server(serverId); await server.setMOTD(motd); return { ...action(server, 'set_motd'), motd }; });
 
   tool('list_player_lists', 'List player lists available on a server.', z.object({ serverId }), readOnly,
     async ({ serverId }) => (await client.server(serverId).getPlayerLists()).map((list) => list.getName()));
   tool('get_player_list', 'Get entries from a player list such as whitelist or ops.', z.object({ serverId, listName }), readOnly,
     async ({ serverId, listName }) => ({ serverId, listName, entries: await client.server(serverId).getPlayerList(listName).getEntries() }));
-  tool('add_player_entries', 'Add one or more entries to a server player list.', z.object({ serverId, listName, entries }), write,
+  tool('add_player_entries', 'Add one or more entries to a server player list.', z.object({ serverId, listName, entries }), additive,
     async ({ serverId, listName, entries }) => { await client.server(serverId).getPlayerList(listName).addEntries(entries); return { success: true, serverId, listName, added: entries }; });
   tool('remove_player_entries', 'Remove one or more entries from a server player list.', z.object({ serverId, listName, entries }), destructive,
     async ({ serverId, listName, entries }) => { await client.server(serverId).getPlayerList(listName).deleteEntries(entries); return { success: true, serverId, listName, removed: entries }; });
@@ -137,7 +160,7 @@ export function createServer(client) {
   tool('delete_file', 'Delete a server file or directory. This cannot be undone through the API.',
     z.object({ serverId, path: filePath }), destructive,
     async ({ serverId, path }) => { await client.server(serverId).getFile(path).delete(); return { success: true, serverId, path, action: 'delete_file' }; });
-  tool('create_directory', 'Create a directory in server storage.', z.object({ serverId, path: filePath }), write,
+  tool('create_directory', 'Create a directory in server storage.', z.object({ serverId, path: filePath }), additive,
     async ({ serverId, path }) => { await client.server(serverId).getFile(path).createAsDirectory(); return { success: true, serverId, path, action: 'create_directory' }; });
 
   tool('get_config_options', 'Get typed options and available choices from an exaroton config file.',
@@ -147,7 +170,7 @@ export function createServer(client) {
       return { serverId, path, options: [...options.values()].map(optionInfo) };
     });
   tool('set_config_options', 'Update selected options in an exaroton config file. Get options first to see types and choices.',
-    z.object({ serverId, path: filePath, values: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])) }), write,
+    z.object({ serverId, path: filePath, values: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])) }), destructive,
     async ({ serverId, path, values }) => {
       if (Object.keys(values).length === 0) throw new Error('At least one config option is required');
       const config = client.server(serverId).getFile(path).getConfig();
