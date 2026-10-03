@@ -1,6 +1,6 @@
 {
   "name": "@cynosure/exaroton",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP server for managing exaroton Minecraft servers",
   "mcpName": "io.github.cynosure/exaroton",
   "homepage": "https://www.npmjs.com/package/@cynosure/exaroton",
@@ -43,6 +43,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/andreasjhagen/mcp-exaroton.git"
+    "url": "git+https://github.com/Cynosure-MCP-Collection/mcp-exaroton.git"
   }
 }

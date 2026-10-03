@@ -3,11 +3,11 @@
   "name": "io.github.cynosure/exaroton",
   "title": "exaroton Minecraft Server Manager",
   "description": "MCP server for managing exaroton Minecraft servers",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "websiteUrl": "https://www.npmjs.com/package/@cynosure/exaroton",
   "icons": [
     {
-      "src": "https://unpkg.com/@cynosure/exaroton@1.0.1/icon.png",
+      "src": "https://unpkg.com/@cynosure/exaroton@1.0.2/icon.png",
       "mimeType": "image/png",
       "sizes": [
         "512x512"
@@ -18,7 +18,7 @@
     {
       "registryType": "npm",
       "identifier": "@cynosure/exaroton",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "transport": {
         "type": "stdio"
       },
