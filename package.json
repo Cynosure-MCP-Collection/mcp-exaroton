@@ -1,6 +1,6 @@
 {
   "name": "@cynosure/exaroton",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for managing exaroton Minecraft servers",
   "mcpName": "io.github.cynosure/exaroton",
   "homepage": "https://www.npmjs.com/package/@cynosure/exaroton",
@@ -26,7 +26,8 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "version": "node scripts/sync-version.mjs && git add server.json"
+    "version": "node scripts/sync-version.mjs && git add server.json",
+    "release:check": "node scripts/sync-version.mjs --check"
   },
   "engines": {
     "node": ">=22"
@@ -39,5 +40,9 @@
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.1.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreasjhagen/mcp-exaroton.git"
+  }
 }
